@@ -1,6 +1,6 @@
 // src/components/MobileMenu.jsx
 import { Link } from 'react-router-dom';
-import { X } from 'lucide-react';
+import { X, Search } from 'lucide-react';
 import Button from './Button';
 
 export default function MobileMenu({ isOpen, setIsOpen }) {
@@ -8,7 +8,7 @@ export default function MobileMenu({ isOpen, setIsOpen }) {
     { to: '/', label: 'Home' },
     { to: '/marketplace', label: 'Shop' },
     { to: '/services', label: 'Services' },
-    { to: '/providers', label: 'Businesses' },
+    { to: '/businesses', label: 'Businesses' },
     { to: '/deals', label: 'Deals' },
     { to: '/about', label: 'About Us' },
   ];
@@ -20,10 +20,12 @@ export default function MobileMenu({ isOpen, setIsOpen }) {
       <div className="flex flex-col h-full">
         {/* Header */}
         <div className="flex justify-between items-center p-4 border-b border-gray-100">
-          <Link to="/" className="flex items-center gap-2" onClick={() => setIsOpen(false)}>
-            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
-              <span className="text-white font-bold text-lg">M</span>
-            </div>
+          <Link to="/" className="flex items-center gap-3" onClick={() => setIsOpen(false)}>
+            <img 
+              src="/logo.png" 
+              alt="Munolink" 
+              className="h-8 w-auto object-contain"
+            />
             <span className="text-xl font-bold text-primary">Munolink</span>
           </Link>
           <button onClick={() => setIsOpen(false)} className="p-2 hover:bg-gray-100 rounded-xl">
@@ -49,12 +51,12 @@ export default function MobileMenu({ isOpen, setIsOpen }) {
           {/* Search in Mobile */}
           <div className="mt-6">
             <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search products, services..."
                 className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
               />
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
             </div>
           </div>
 

@@ -1,7 +1,6 @@
 // src/components/Footer.jsx
 import { Link } from 'react-router-dom';
-import { Mail, Phone, MapPin, X } from 'lucide-react';
-// Twitter/X is now just "X" in lucide-react
+import { Mail, Phone, MapPin, Facebook, Twitter, Instagram, Youtube } from 'lucide-react';
 
 export default function Footer() {
   return (
@@ -10,10 +9,12 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
           {/* Brand */}
           <div className="lg:col-span-2">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center">
-                <span className="text-primary font-bold text-lg">M</span>
-              </div>
+            <div className="flex items-center gap-3 mb-4">
+              <img 
+                src="/logo.png" 
+                alt="Munolink" 
+                className="h-12 w-auto object-contain"
+              />
               <div>
                 <span className="text-xl font-bold block">Munolink</span>
                 <span className="text-xs text-gray-400">For Better Connections</span>
@@ -24,10 +25,10 @@ export default function Footer() {
               across the country. Shop local, support local.
             </p>
             <div className="flex gap-4 mt-6">
-              <a href="#" className="text-gray-400 hover:text-white transition text-2xl">📘</a>
-              <a href="#" className="text-gray-400 hover:text-white transition text-2xl">🐦</a>
-              <a href="#" className="text-gray-400 hover:text-white transition text-2xl">📸</a>
-              <a href="#" className="text-gray-400 hover:text-white transition text-2xl">▶️</a>
+              <a href="#" className="text-gray-400 hover:text-white transition"><Facebook size={20} /></a>
+              <a href="#" className="text-gray-400 hover:text-white transition"><Twitter size={20} /></a>
+              <a href="#" className="text-gray-400 hover:text-white transition"><Instagram size={20} /></a>
+              <a href="#" className="text-gray-400 hover:text-white transition"><Youtube size={20} /></a>
             </div>
           </div>
 
@@ -45,7 +46,7 @@ export default function Footer() {
           <div>
             <h3 className="font-bold text-lg mb-4">Businesses</h3>
             <ul className="space-y-2">
-              <li><Link to="/providers" className="text-gray-400 hover:text-white transition text-sm">All Businesses</Link></li>
+              <li><Link to="/businesses" className="text-gray-400 hover:text-white transition text-sm">All Businesses</Link></li>
               <li><Link to="/partners" className="text-gray-400 hover:text-white transition text-sm">Partners</Link></li>
               <li><Link to="/register" className="text-gray-400 hover:text-white transition text-sm">List Your Business</Link></li>
             </ul>
@@ -60,8 +61,8 @@ export default function Footer() {
               <li><Link to="/about" className="text-gray-400 hover:text-white transition text-sm">About Us</Link></li>
             </ul>
             <div className="mt-4 space-y-2 text-sm text-gray-400">
-              <div className="flex items-center gap-2"><Mail size={14} /> +256 700 123 456</div>
-              <div className="flex items-center gap-2"><Phone size={14} /> info@munolink.com</div>
+              <div className="flex items-center gap-2"><Phone size={14} /> +256 700 123 456</div>
+              <div className="flex items-center gap-2"><Mail size={14} /> info@munolink.com</div>
               <div className="flex items-center gap-2"><MapPin size={14} /> Jinja City, Uganda</div>
             </div>
           </div>
