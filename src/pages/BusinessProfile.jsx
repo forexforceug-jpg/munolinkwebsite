@@ -1,6 +1,7 @@
 // src/pages/BusinessProfile.jsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
 import { 
   Star, 
   Heart, 
@@ -30,7 +31,6 @@ import {
   Ambulance,
   Baby,
   Scissors,
-  // Flask removed - using Beaker instead
   Beaker,
   Pill,
   Activity,
@@ -39,7 +39,8 @@ import {
   Briefcase,
   Sparkles,
   TrendingUp,
-  Clock as ClockIcon
+  Clock as ClockIcon,
+  Eye
 } from 'lucide-react';
 import Button from '../components/Button';
 
@@ -48,15 +49,22 @@ export default function BusinessProfile() {
   const [activeTab, setActiveTab] = useState('overview');
   const [isSaved, setIsSaved] = useState(false);
   const [isShared, setIsShared] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [business, setBusiness] = useState(null);
+  const [services, setServices] = useState([]);
+  const [features, setFeatures] = useState([]);
+  const [galleryImages, setGalleryImages] = useState([]);
+  const [testimonials, setTestimonials] = useState([]);
+  const [similarBusinesses, setSimilarBusinesses] = useState([]);
 
-  // Business data
-  const business = {
+  // Fallback data
+  const fallbackBusiness = {
     id: 1,
     name: 'Jinja Regional Hospital',
     category: 'Healthcare',
     type: 'Hospital',
     tagline: 'Quality healthcare services for the community.',
-    description: 'Jinja Regional Hospital is a premier healthcare facility dedicated to providing comprehensive medical services to the community. With a team of highly qualified professionals and state-of-the-art equipment, we deliver compassionate, patient-centered care across multiple specialties.',
+    description: 'Jinja Regional Hospital is a premier healthcare facility dedicated to providing comprehensive medical services to the community.',
     location: 'Jinja, Uganda',
     rating: 4.8,
     reviews: 234,
@@ -71,8 +79,8 @@ export default function BusinessProfile() {
     employees: 150,
     patients: 15000,
     departments: 8,
-    coverImage: 'https://images.unsplash.com/photo-1584820927498-cfe5211fd8bf?w=1200&h=600&fit=crop',
-    logo: 'https://images.unsplash.com/photo-1584820927498-cfe5211fd8bf?w=200&h=200&fit=crop',
+    coverImage: '/images/businesses/hospital-cover.jpg',
+    logo: '/images/businesses/hospital-logo.jpg',
     social: {
       facebook: '#',
       twitter: '#',
@@ -91,8 +99,7 @@ export default function BusinessProfile() {
     emergency: '24/7 Emergency Services Available'
   };
 
-  // Services data - using Beaker instead of Flask
-  const services = [
+  const fallbackServices = [
     { icon: <Stethoscope className="w-5 h-5 text-primary" />, name: 'Outpatient Care', desc: 'General consultations and check-ups' },
     { icon: <Building className="w-5 h-5 text-primary" />, name: 'Inpatient Services', desc: 'Comfortable wards for overnight care' },
     { icon: <Ambulance className="w-5 h-5 text-primary" />, name: 'Emergency Services', desc: '24/7 emergency medical response' },
@@ -103,57 +110,53 @@ export default function BusinessProfile() {
     { icon: <Activity className="w-5 h-5 text-primary" />, name: 'Health Screening', desc: 'Preventive health check-ups' },
   ];
 
-  // Features
-  const features = [
+  const fallbackFeatures = [
     { icon: <Users className="w-5 h-5 text-primary" />, title: 'Qualified Staff', desc: 'Highly trained medical professionals' },
     { icon: <Shield className="w-5 h-5 text-primary" />, title: 'Modern Equipment', desc: 'State-of-the-art medical technology' },
     { icon: <Home className="w-5 h-5 text-primary" />, title: 'Clean Environment', desc: 'Safe and hygienic facilities' },
     { icon: <Heart className="w-5 h-5 text-primary" />, title: 'Patient First', desc: 'Compassionate, patient-centered care' },
   ];
 
-  // Gallery images
-  const galleryImages = [
-    'https://images.unsplash.com/photo-1584820927498-cfe5211fd8bf?w=400&h=300&fit=crop',
-    'https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=400&h=300&fit=crop',
-    'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=400&h=300&fit=crop',
-    'https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=400&h=300&fit=crop',
-    'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=400&h=300&fit=crop',
-    'https://images.unsplash.com/photo-1584820927498-cfe5211fd8bf?w=400&h=300&fit=crop'
+  const fallbackGallery = [
+    '/images/businesses/gallery-1.jpg',
+    '/images/businesses/gallery-2.jpg',
+    '/images/businesses/gallery-3.jpg',
+    '/images/businesses/gallery-4.jpg',
+    '/images/businesses/gallery-5.jpg',
+    '/images/businesses/gallery-6.jpg'
   ];
 
-  // Testimonials
-  const testimonials = [
+  const fallbackTestimonials = [
     {
       id: 1,
       name: 'Sarah Nantongo',
       role: 'Patient',
-      text: 'The care I received at Jinja Regional Hospital was exceptional. The staff was professional, compassionate, and made me feel at ease throughout my treatment.',
+      text: 'The care I received was exceptional. The staff was professional, compassionate, and made me feel at ease throughout my treatment.',
       rating: 5,
       date: 'Dec 2026',
-      image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop'
+      image: '/images/avatars/avatar-1.jpg'
     },
     {
       id: 2,
       name: 'John Muwonge',
       role: 'Patient',
-      text: 'I booked my appointment through Munolink and the experience was seamless. The hospital is well-equipped and the doctors are highly knowledgeable.',
+      text: 'I booked my appointment through Munolink and the experience was seamless. The facility is well-equipped and the staff are highly knowledgeable.',
       rating: 5,
       date: 'Nov 2026',
-      image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop'
+      image: '/images/avatars/avatar-2.jpg'
     },
     {
       id: 3,
       name: 'Grace Auma',
       role: 'Patient',
-      text: 'The maternity ward is top-notch. The nurses were incredibly supportive during my delivery. Thank you Jinja Regional Hospital!',
+      text: 'The maternity ward is top-notch. The nurses were incredibly supportive during my delivery. Thank you!',
       rating: 5,
       date: 'Oct 2026',
-      image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop'
+      image: '/images/avatars/avatar-3.jpg'
     }
   ];
 
-  // Similar businesses
-  const similarBusinesses = [
+  const fallbackSimilar = [
     {
       id: 2,
       name: 'Jinja Medical Center',
@@ -161,7 +164,7 @@ export default function BusinessProfile() {
       rating: 4.6,
       reviews: 156,
       isOpen: true,
-      image: 'https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=200&h=150&fit=crop'
+      image: '/images/businesses/medical-center.jpg'
     },
     {
       id: 3,
@@ -170,7 +173,7 @@ export default function BusinessProfile() {
       rating: 4.7,
       reviews: 189,
       isOpen: true,
-      image: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=200&h=150&fit=crop'
+      image: '/images/businesses/lake-hospital.jpg'
     },
     {
       id: 4,
@@ -179,18 +182,178 @@ export default function BusinessProfile() {
       rating: 4.5,
       reviews: 98,
       isOpen: true,
-      image: 'https://images.unsplash.com/photo-1587854692152-cbe660dbde88?w=200&h=150&fit=crop'
+      image: '/images/businesses/pharmacy.jpg'
     },
     {
       id: 5,
-      name: 'St. Mary\'s Clinic',
+      name: "St. Mary's Clinic",
       category: 'Healthcare',
       rating: 4.8,
       reviews: 234,
       isOpen: false,
-      image: 'https://images.unsplash.com/photo-1584820927498-cfe5211fd8bf?w=200&h=150&fit=crop'
+      image: '/images/businesses/clinic.jpg'
     }
   ];
+
+  // Fetch business data
+  useEffect(() => {
+    const fetchBusiness = async () => {
+      setLoading(true);
+      try {
+        // Try to get the business from institutions table
+        const { data: institutionData, error: institutionError } = await supabase
+          .from('institutions')
+          .select('*')
+          .eq('id', id)
+          .single();
+
+        if (institutionData) {
+          setBusiness({
+            ...institutionData,
+            id: institutionData.id,
+            name: institutionData.name,
+            category: institutionData.type || 'Service Provider',
+            type: institutionData.type || 'Institution',
+            tagline: institutionData.description?.slice(0, 100) || 'Quality services for the community.',
+            description: institutionData.description || 'Professional services provider.',
+            location: institutionData.city || institutionData.address || 'Jinja, Uganda',
+            rating: institutionData.rating || 0,
+            reviews: institutionData.review_count || 0,
+            isVerified: institutionData.is_verified || false,
+            isOpen: institutionData.is_open || true,
+            is24Hours: false,
+            isFeatured: false,
+            phone: institutionData.phone || '+256 700 123 456',
+            email: institutionData.email || 'info@example.ug',
+            website: institutionData.website || 'www.example.ug',
+            services: 0,
+            employees: 0,
+            patients: 0,
+            departments: 0,
+            coverImage: institutionData.cover_image || '/images/businesses/placeholder-cover.jpg',
+            logo: institutionData.logo || '/images/businesses/placeholder-logo.jpg',
+            social: {
+              facebook: '#',
+              twitter: '#',
+              instagram: '#',
+              youtube: '#'
+            },
+            workingHours: institutionData.working_hours || {
+              monday: '8:00 AM - 6:00 PM',
+              tuesday: '8:00 AM - 6:00 PM',
+              wednesday: '8:00 AM - 6:00 PM',
+              thursday: '8:00 AM - 6:00 PM',
+              friday: '8:00 AM - 6:00 PM',
+              saturday: '8:00 AM - 2:00 PM',
+              sunday: 'Closed'
+            },
+            emergency: 'Emergency services available'
+          });
+        } else {
+          // Try shops table
+          const { data: shopData, error: shopError } = await supabase
+            .from('shops')
+            .select('*')
+            .eq('id', id)
+            .single();
+
+          if (shopData) {
+            setBusiness({
+              ...shopData,
+              id: shopData.id,
+              name: shopData.name,
+              category: shopData.category || 'Shop',
+              type: 'Shop',
+              tagline: 'Quality products and services.',
+              description: 'Your trusted local shop.',
+              location: shopData.area || shopData.address || 'Jinja, Uganda',
+              rating: shopData.rating || 0,
+              reviews: shopData.review_count || 0,
+              isVerified: shopData.is_verified || false,
+              isOpen: shopData.is_open || true,
+              is24Hours: false,
+              isFeatured: false,
+              phone: shopData.phone || '+256 700 123 456',
+              email: 'info@example.ug',
+              website: 'www.example.ug',
+              services: 0,
+              employees: 0,
+              patients: 0,
+              departments: 0,
+              coverImage: '/images/businesses/placeholder-cover.jpg',
+              logo: '/images/businesses/placeholder-logo.jpg',
+              social: {
+                facebook: '#',
+                twitter: '#',
+                instagram: '#',
+                youtube: '#'
+              },
+              workingHours: {
+                monday: '8:00 AM - 6:00 PM',
+                tuesday: '8:00 AM - 6:00 PM',
+                wednesday: '8:00 AM - 6:00 PM',
+                thursday: '8:00 AM - 6:00 PM',
+                friday: '8:00 AM - 6:00 PM',
+                saturday: '8:00 AM - 2:00 PM',
+                sunday: 'Closed'
+              },
+              emergency: 'Contact for emergencies'
+            });
+          } else {
+            // Use fallback
+            setBusiness(fallbackBusiness);
+          }
+        }
+
+        // Set fallback data for other sections
+        setServices(fallbackServices);
+        setFeatures(fallbackFeatures);
+        setGalleryImages(fallbackGallery);
+        setTestimonials(fallbackTestimonials);
+        setSimilarBusinesses(fallbackSimilar);
+
+      } catch (err) {
+        console.error('Error fetching business:', err);
+        setBusiness(fallbackBusiness);
+        setServices(fallbackServices);
+        setFeatures(fallbackFeatures);
+        setGalleryImages(fallbackGallery);
+        setTestimonials(fallbackTestimonials);
+        setSimilarBusinesses(fallbackSimilar);
+      }
+      setLoading(false);
+    };
+
+    if (id) {
+      fetchBusiness();
+    }
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-gray-500">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!business) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-6xl mb-4">🔍</div>
+          <h2 className="text-2xl font-bold text-gray-900">Business not found</h2>
+          <p className="text-gray-500 mt-2">The business you're looking for doesn't exist.</p>
+          <Link to="/businesses" className="text-primary hover:underline mt-4 inline-block">
+            Browse Businesses
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -200,7 +363,7 @@ export default function BusinessProfile() {
           <div className="flex items-center gap-2 text-sm text-gray-500">
             <Link to="/" className="hover:text-primary transition">Home</Link>
             <span className="text-gray-300">/</span>
-            <Link to="/businesses" className="hover:text-primary transition">Healthcare</Link>
+            <Link to="/businesses" className="hover:text-primary transition">Businesses</Link>
             <span className="text-gray-300">/</span>
             <span className="text-primary font-medium">{business.name}</span>
           </div>
@@ -209,31 +372,34 @@ export default function BusinessProfile() {
 
       {/* ========== Hero Section ========== */}
       <div className="relative">
-        {/* Cover Image */}
         <div className="w-full h-80 md:h-96 lg:h-[500px] overflow-hidden">
           <img 
             src={business.coverImage} 
             alt={business.name}
             className="w-full h-full object-cover"
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = '/images/businesses/placeholder-cover.jpg';
+            }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
         </div>
 
-        {/* Floating Info Panel */}
         <div className="absolute bottom-0 left-0 right-0">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-6">
             <div className="flex flex-col lg:flex-row items-start lg:items-end justify-between gap-4">
               <div className="flex items-end gap-4">
-                {/* Logo */}
                 <div className="w-20 h-20 md:w-24 md:h-24 rounded-xl border-4 border-white shadow-lg overflow-hidden bg-white flex-shrink-0">
                   <img 
                     src={business.logo} 
                     alt={business.name}
                     className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = '/images/businesses/placeholder-logo.jpg';
+                    }}
                   />
                 </div>
-
-                {/* Info */}
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <h1 className="text-2xl md:text-3xl font-bold text-white">{business.name}</h1>
@@ -255,7 +421,7 @@ export default function BusinessProfile() {
                     </div>
                     <div className="flex items-center gap-1">
                       {business.isOpen ? (
-                        <span className="text-green-400">● Open 24/7</span>
+                        <span className="text-green-400">● Open {business.is24Hours ? '24/7' : 'Now'}</span>
                       ) : (
                         <span className="text-red-400">● Closed</span>
                       )}
@@ -264,7 +430,6 @@ export default function BusinessProfile() {
                 </div>
               </div>
 
-              {/* Action Buttons */}
               <div className="flex gap-2">
                 <button 
                   onClick={() => setIsSaved(!isSaved)}
@@ -336,13 +501,11 @@ export default function BusinessProfile() {
 
           {/* ========== Middle Column - Details ========== */}
           <div className="lg:col-span-1 space-y-6">
-            {/* About */}
             <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
               <h2 className="text-lg font-bold text-gray-900 mb-3">About Us</h2>
               <p className="text-gray-600 text-sm leading-relaxed">{business.description}</p>
             </div>
 
-            {/* Features */}
             <div className="grid grid-cols-2 gap-3">
               {features.map((feature, i) => (
                 <div key={i} className="bg-white rounded-2xl shadow-sm p-4 border border-gray-100 text-center">
@@ -353,7 +516,6 @@ export default function BusinessProfile() {
               ))}
             </div>
 
-            {/* Promotional Booking Banner */}
             <div className="bg-primary rounded-2xl p-6 text-white relative overflow-hidden">
               <div className="relative z-10">
                 <h3 className="text-xl font-bold">Book & Pay with Munolink</h3>
@@ -365,13 +527,12 @@ export default function BusinessProfile() {
               </div>
             </div>
 
-            {/* Working Hours */}
             <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
               <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <Clock className="w-5 h-5 text-primary" /> Working Hours
               </h2>
               <div className="space-y-2">
-                {Object.entries(business.workingHours).map(([day, hours]) => (
+                {business.workingHours && Object.entries(business.workingHours).map(([day, hours]) => (
                   <div key={day} className="flex justify-between text-sm">
                     <span className="capitalize text-gray-600">{day}</span>
                     <span className="text-gray-900 font-medium">{hours}</span>
@@ -386,7 +547,6 @@ export default function BusinessProfile() {
 
           {/* ========== Right Column - Quick Info ========== */}
           <div className="lg:col-span-1 space-y-6">
-            {/* Location Map */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
               <div className="aspect-video bg-gray-200 flex items-center justify-center">
                 <div className="text-center">
@@ -402,7 +562,6 @@ export default function BusinessProfile() {
               </div>
             </div>
 
-            {/* Contact Details */}
             <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
               <h2 className="text-lg font-bold text-gray-900 mb-4">Contact</h2>
               <div className="space-y-3">
@@ -420,26 +579,25 @@ export default function BusinessProfile() {
                 </div>
               </div>
               <div className="flex gap-3 mt-4 pt-4 border-t border-gray-100">
-                <a href={business.social.facebook} className="text-gray-400 hover:text-primary transition"><Facebook className="w-5 h-5" /></a>
-                <a href={business.social.twitter} className="text-gray-400 hover:text-primary transition"><Twitter className="w-5 h-5" /></a>
-                <a href={business.social.instagram} className="text-gray-400 hover:text-primary transition"><Instagram className="w-5 h-5" /></a>
-                <a href={business.social.youtube} className="text-gray-400 hover:text-primary transition"><Youtube className="w-5 h-5" /></a>
+                <a href={business.social?.facebook || '#'} className="text-gray-400 hover:text-primary transition"><Facebook className="w-5 h-5" /></a>
+                <a href={business.social?.twitter || '#'} className="text-gray-400 hover:text-primary transition"><Twitter className="w-5 h-5" /></a>
+                <a href={business.social?.instagram || '#'} className="text-gray-400 hover:text-primary transition"><Instagram className="w-5 h-5" /></a>
+                <a href={business.social?.youtube || '#'} className="text-gray-400 hover:text-primary transition"><Youtube className="w-5 h-5" /></a>
               </div>
             </div>
 
-            {/* Stats */}
             <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
-                  <div className="text-2xl font-bold text-primary">{business.patients}+</div>
+                  <div className="text-2xl font-bold text-primary">{business.patients || '0'}+</div>
                   <div className="text-xs text-gray-500">Patients Served</div>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-primary">{business.employees}+</div>
+                  <div className="text-2xl font-bold text-primary">{business.employees || '0'}+</div>
                   <div className="text-xs text-gray-500">Staff Members</div>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-primary">{business.departments}</div>
+                  <div className="text-2xl font-bold text-primary">{business.departments || '0'}</div>
                   <div className="text-xs text-gray-500">Departments</div>
                 </div>
               </div>
@@ -457,6 +615,10 @@ export default function BusinessProfile() {
                   src={img} 
                   alt={`Gallery ${i + 1}`}
                   className="w-full h-full object-cover hover:scale-105 transition duration-300 cursor-pointer"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = '/images/businesses/placeholder-gallery.jpg';
+                  }}
                 />
               </div>
             ))}
@@ -480,7 +642,8 @@ export default function BusinessProfile() {
                     alt={testimonial.name}
                     className="w-12 h-12 rounded-full object-cover"
                     onError={(e) => {
-                      e.target.src = 'https://placehold.co/48x48/4A7DFF/FFFFFF?text=' + testimonial.name[0];
+                      e.target.onerror = null;
+                      e.target.src = '/images/avatars/placeholder.jpg';
                     }}
                   />
                   <div>
@@ -503,8 +666,8 @@ export default function BusinessProfile() {
         {/* ========== Similar Businesses ========== */}
         <section className="mt-12">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Similar Healthcare Providers</h2>
-            <Link to="/businesses/healthcare" className="text-primary hover:underline text-sm font-medium flex items-center gap-1">
+            <h2 className="text-2xl font-bold text-gray-900">Similar Providers</h2>
+            <Link to="/businesses" className="text-primary hover:underline text-sm font-medium flex items-center gap-1">
               View All <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
@@ -518,7 +681,8 @@ export default function BusinessProfile() {
                       alt={biz.name}
                       className="w-full h-32 object-cover group-hover:scale-105 transition duration-300"
                       onError={(e) => {
-                        e.target.src = 'https://placehold.co/400x200/4A7DFF/FFFFFF?text=Healthcare';
+                        e.target.onerror = null;
+                        e.target.src = '/images/businesses/placeholder.jpg';
                       }}
                     />
                     <div className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-sm px-2 py-0.5 rounded-full text-[10px] font-medium">
