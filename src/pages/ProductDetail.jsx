@@ -660,7 +660,7 @@ export default function ProductDetail() {
                   <div className="text-xs text-gray-500">{item.desc}</div>
                 </div>
               </div>
-            ))}
+            ))} 
           </div>
         </section>
       </div>
